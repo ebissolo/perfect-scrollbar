@@ -11,10 +11,10 @@ export default function(i) {
   function shouldPreventDefault(deltaX, deltaY) {
     const isTop = element.scrollTop === 0;
     const isBottom =
-      element.scrollTop + element.offsetHeight === element.scrollHeight;
+      element.scrollTop + element.offsetHeight === ( i.settings.scrollContentHeight != null ? i.settings.scrollContentHeight : element.scrollHeight );
     const isLeft = element.scrollLeft === 0;
     const isRight =
-      element.scrollLeft + element.offsetWidth === element.scrollWidth;
+      element.scrollLeft + element.offsetWidth === ( i.settings.scrollContentWidth != null ? i.settings.scrollContentWidth : element.scrollWidth );
 
     let hitsBound;
 

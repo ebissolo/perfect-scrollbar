@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="../css/perfect-scrollbar.css" rel="stylesheet">
+    <script src="../dist/perfect-scrollbar.js"></script>
+    <style>
+		#container {
+			position: absolute;
+			left: 10px;
+			top: 10px;
+			width: 600px;
+			height: 400px;
+			overflow: hidden;
+		}
+		#container .content {
+			background-image: url('./assets/azusa.jpg');
+			width: 1280px;
+			height: 720px;
+		}
+		#inputs {
+			position: absolute;
+			top: 600px;
+		}
+    </style>
+  </head>
+  <body>
+
+    <div id="container">
+      <div class="content">
+      </div>
+    </div>
+
+	<div id="inputs">
+		<p style='text-align: center'>
+		Width <input type='text' id='width' value='600'>
+		Height <input type='text' id='height' value='400'>
+		X <input type='text' id='xpos' value='10'>
+		Y <input type='text' id='ypos' value='10'>
+		<button onclick='updateSize()'>Change!</button>
+		</p>
+	</div>
+
+    <script>
+    var $ = document.querySelector.bind(document);
+
+    var ps = new PerfectScrollbar('#container');
+
+    function updateSize() {
+      var width = parseInt($('#width').value, 10);
+	  var height = parseInt($('#height').value, 10);
+	  var x = parseInt($('#xpos').value, 10);
+	  var y = parseInt($('#ypos').value, 10);
+
+      $('#container').style.width = width + 'px';
+	  $('#container').style.height = height + 'px';
+	  $('#container').style.left = x + 'px';
+	  $('#container').style.top = y + 'px';
+
+      ps.update();
+    }
+    </script>
+  </body>
+</html>

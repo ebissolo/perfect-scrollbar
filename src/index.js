@@ -58,6 +58,8 @@ export default class PerfectScrollbar {
     this.containerHeight = null;
     this.contentWidth = null;
     this.contentHeight = null;
+    this.containerLeft = parseFloat( element.style.left ) || element.getBoundingClientRect().left;
+    this.containerTop = parseFloat( element.style.top ) || element.getBoundingClientRect().top;
 
     const focus = () => element.classList.add(cls.state.focus);
     const blur = () => element.classList.remove(cls.state.focus);
@@ -78,9 +80,13 @@ export default class PerfectScrollbar {
     this.ownerDocument = element.ownerDocument || document;
 
     this.scrollbarXRail = DOM.div(cls.element.rail('x'));
-    element.appendChild(this.scrollbarXRail);
+    
+    //TEST
+    document.body.appendChild(this.scrollbarXRail);
     this.scrollbarX = DOM.div(cls.element.thumb('x'));
-    this.scrollbarXRail.appendChild(this.scrollbarX);
+    this.scrollbarXRail.appendChild( this.scrollbarX );
+ 
+ 
     this.scrollbarX.setAttribute('tabindex', 0);
     this.event.bind(this.scrollbarX, 'focus', focus);
     this.event.bind(this.scrollbarX, 'blur', blur);
@@ -106,9 +112,20 @@ export default class PerfectScrollbar {
     this.railXRatio = null;
 
     this.scrollbarYRail = DOM.div(cls.element.rail('y'));
-    element.appendChild(this.scrollbarYRail);
+
+    //TEST
+    this.event.bind( this.element, "mouseenter", () => {
+      this.scrollbarXRail.style.backgroundColor = "#eee";
+      this.scrollbarYRail.style.backgroundColor = "#eee";
+      this.scrollbarXRail.style.opacity = 0.9;
+      this.scrollbarYRail.style.opacity = 0.9;
+    });
+
+    // TEST
+    document.body.appendChild(this.scrollbarYRail);
     this.scrollbarY = DOM.div(cls.element.thumb('y'));
     this.scrollbarYRail.appendChild(this.scrollbarY);
+    
     this.scrollbarY.setAttribute('tabindex', 0);
     this.event.bind(this.scrollbarY, 'focus', focus);
     this.event.bind(this.scrollbarY, 'blur', blur);

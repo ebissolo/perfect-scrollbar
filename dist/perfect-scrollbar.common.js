@@ -1,6 +1,6 @@
 /*!
  * perfect-scrollbar v1.3.0
- * (c) 2017 Hyunje Jun
+ * (c) 2018 Hyunje Jun
  * @license MIT
  */
 'use strict';
@@ -64,6 +64,7 @@ var cls = {
   },
   state: {
     focus: 'ps--focus',
+    clicking: 'ps--clicking',
     active: function (x) { return ("ps--active-" + x); },
     scrolling: function (x) { return ("ps--scrolling-" + x); },
   },
@@ -321,58 +322,38 @@ var updateGeometry = function(i) {
 
   i.containerWidth = element.clientWidth;
   i.containerHeight = element.clientHeight;
-  i.contentWidth = element.scrollWidth;
-  i.contentHeight = element.scrollHeight;
+  i.contentWidth = i.settings.scrollContentWidth != null ?  i.settings.scrollContentWidth : element.scrollWidth;
+  i.contentHeight = i.settings.scrollContentHeight != null ?  i.settings.scrollContentHeight : element.scrollHeight;
 
   if (!element.contains(i.scrollbarXRail)) {
     // clean up and append
     queryChildren(element, cls.element.rail('x')).forEach(function (el) { return remove(el); }
     );
-    element.appendChild(i.scrollbarXRail);
+    document.body.appendChild(i.scrollbarXRail);
   }
   if (!element.contains(i.scrollbarYRail)) {
     // clean up and append
     queryChildren(element, cls.element.rail('y')).forEach(function (el) { return remove(el); }
     );
-    element.appendChild(i.scrollbarYRail);
+    document.body.appendChild(i.scrollbarYRail);
   }
 
-  if (
-    !i.settings.suppressScrollX &&
-    i.containerWidth + i.settings.scrollXMarginOffset < i.contentWidth
-  ) {
+  if ( !i.settings.suppressScrollX && i.containerWidth + i.settings.scrollXMarginOffset < i.contentWidth ) {
     i.scrollbarXActive = true;
     i.railXWidth = i.containerWidth - i.railXMarginWidth;
     i.railXRatio = i.containerWidth / i.railXWidth;
-    i.scrollbarXWidth = getThumbSize(
-      i,
-      toInt(i.railXWidth * i.containerWidth / i.contentWidth)
-    );
-    i.scrollbarXLeft = toInt(
-      (i.negativeScrollAdjustment + element.scrollLeft) *
-        (i.railXWidth - i.scrollbarXWidth) /
-        (i.contentWidth - i.containerWidth)
-    );
+    i.scrollbarXWidth = getThumbSize( i, toInt(i.railXWidth * i.containerWidth / i.contentWidth ) );
+    i.scrollbarXLeft = toInt((i.negativeScrollAdjustment + element.scrollLeft) * (i.railXWidth - i.scrollbarXWidth) / (i.contentWidth - i.containerWidth));
   } else {
     i.scrollbarXActive = false;
   }
 
-  if (
-    !i.settings.suppressScrollY &&
-    i.containerHeight + i.settings.scrollYMarginOffset < i.contentHeight
-  ) {
+  if ( !i.settings.suppressScrollY && i.containerHeight + i.settings.scrollYMarginOffset < i.contentHeight ) {
     i.scrollbarYActive = true;
     i.railYHeight = i.containerHeight - i.railYMarginHeight;
     i.railYRatio = i.containerHeight / i.railYHeight;
-    i.scrollbarYHeight = getThumbSize(
-      i,
-      toInt(i.railYHeight * i.containerHeight / i.contentHeight)
-    );
-    i.scrollbarYTop = toInt(
-      element.scrollTop *
-        (i.railYHeight - i.scrollbarYHeight) /
-        (i.contentHeight - i.containerHeight)
-    );
+    i.scrollbarYHeight = getThumbSize( i, toInt(i.railYHeight * i.containerHeight / i.contentHeight ) );
+    i.scrollbarYTop = toInt(element.scrollTop * (i.railYHeight - i.scrollbarYHeight) / (i.contentHeight - i.containerHeight));
   } else {
     i.scrollbarYActive = false;
   }
@@ -387,17 +368,17 @@ var updateGeometry = function(i) {
   updateCss(element, i);
 
   if (i.scrollbarXActive) {
-    element.classList.add(cls.state.active('x'));
+    i.scrollbarXRail.classList.add(cls.state.active('x'));
   } else {
-    element.classList.remove(cls.state.active('x'));
+    i.scrollbarXRail.classList.remove(cls.state.active('x'));
     i.scrollbarXWidth = 0;
     i.scrollbarXLeft = 0;
     element.scrollLeft = 0;
   }
   if (i.scrollbarYActive) {
-    element.classList.add(cls.state.active('y'));
+    i.scrollbarYRail.classList.add(cls.state.active('y'));
   } else {
-    element.classList.remove(cls.state.active('y'));
+    i.scrollbarYRail.classList.remove(cls.state.active('y'));
     i.scrollbarYHeight = 0;
     i.scrollbarYTop = 0;
     element.scrollTop = 0;
@@ -417,18 +398,18 @@ function getThumbSize(i, thumbSize) {
 function updateCss(element, i) {
   var xRailOffset = { width: i.railXWidth };
   if (i.isRtl) {
-    xRailOffset.left =
-      i.negativeScrollAdjustment +
-      element.scrollLeft +
-      i.containerWidth -
-      i.contentWidth;
+    xRailOffset.left = i.containerLeft;
+      // i.negativeScrollAdjustment +
+      // element.scrollLeft +
+      // i.containerWidth -
+      // i.contentWidth;
   } else {
-    xRailOffset.left = element.scrollLeft;
+    xRailOffset.left = i.containerLeft; // + element.scrollLeft;
   }
   if (i.isScrollbarXUsingBottom) {
-    xRailOffset.bottom = i.scrollbarXBottom - element.scrollTop;
+    xRailOffset.bottom = ( window.innerHeight - i.containerTop - i.containerHeight ); // i.scrollbarXBottom - element.scrollTop; fixed position !!
   } else {
-    xRailOffset.top = i.scrollbarXTop + element.scrollTop;
+    xRailOffset.top = ( i.containerTop + i.containerHeight ); // + i.scrollbarXTop + element.scrollTop; fixed position !!
   }
   set(i.scrollbarXRail, xRailOffset);
 
@@ -436,26 +417,30 @@ function updateCss(element, i) {
   if (i.isScrollbarYUsingRight) {
     if (i.isRtl) {
       yRailOffset.right =
-        i.contentWidth -
-        (i.negativeScrollAdjustment + element.scrollLeft) -
-        i.scrollbarYRight -
-        i.scrollbarYOuterWidth;
+        ( window.innerWidth - i.containerLeft - i.containerWidth ); // -
+        // i.contentWidth -
+        // (i.negativeScrollAdjustment + element.scrollLeft) -
+        // i.scrollbarYRight -
+        // i.scrollbarYOuterWidth;
     } else {
-      yRailOffset.right = i.scrollbarYRight - element.scrollLeft;
+      yRailOffset.right = ( window.innerWidth - i.containerLeft - i.containerWidth ); // + i.scrollbarYRight - element.scrollLeft;
     }
   } else {
     if (i.isRtl) {
       yRailOffset.left =
-        i.negativeScrollAdjustment +
-        element.scrollLeft +
-        i.containerWidth * 2 -
-        i.contentWidth -
-        i.scrollbarYLeft -
-        i.scrollbarYOuterWidth;
+        ( i.containerLeft + i.containerWidth ); // +
+        // i.negativeScrollAdjustment +
+        // element.scrollLeft +
+        // i.containerWidth * 2 -
+        // i.contentWidth -
+        // i.scrollbarYLeft -
+        // i.scrollbarYOuterWidth;
     } else {
-      yRailOffset.left = i.scrollbarYLeft + element.scrollLeft;
+      yRailOffset.left = ( i.containerLeft + i.containerWidth ); // + i.scrollbarYLeft + element.scrollLeft;
     }
   }
+  yRailOffset.top = i.containerTop;
+
   set(i.scrollbarYRail, yRailOffset);
 
   set(i.scrollbarX, {
@@ -507,7 +492,8 @@ var dragThumb = function(i) {
     'scrollbarX',
     'scrollbarXWidth',
     'scrollLeft',
-    'x' ]);
+    'x',
+    'scrollbarXRail' ]);
   bindMouseScrollHandler(i, [
     'containerHeight',
     'contentHeight',
@@ -516,7 +502,8 @@ var dragThumb = function(i) {
     'scrollbarY',
     'scrollbarYHeight',
     'scrollTop',
-    'y' ]);
+    'y',
+    'scrollbarYRail' ]);
 };
 
 function bindMouseScrollHandler(
@@ -531,6 +518,7 @@ function bindMouseScrollHandler(
   var scrollbarYHeight = ref[5];
   var scrollTop = ref[6];
   var y = ref[7];
+  var scrollbarYRail = ref[8];
 
   var element = i.element;
 
@@ -550,6 +538,7 @@ function bindMouseScrollHandler(
 
   function mouseUpHandler() {
     removeScrollingClass(i, y);
+    i[scrollbarYRail].classList.remove(cls.state.clicking);
     i.event.unbind(i.ownerDocument, 'mousemove', mouseMoveHandler);
   }
 
@@ -562,6 +551,8 @@ function bindMouseScrollHandler(
 
     i.event.bind(i.ownerDocument, 'mousemove', mouseMoveHandler);
     i.event.once(i.ownerDocument, 'mouseup', mouseUpHandler);
+
+    i[scrollbarYRail].classList.add(cls.state.clicking);
 
     e.stopPropagation();
     e.preventDefault();
@@ -718,10 +709,10 @@ var wheel = function(i) {
   function shouldPreventDefault(deltaX, deltaY) {
     var isTop = element.scrollTop === 0;
     var isBottom =
-      element.scrollTop + element.offsetHeight === element.scrollHeight;
+      element.scrollTop + element.offsetHeight === ( i.settings.scrollContentHeight != null ? i.settings.scrollContentHeight : element.scrollHeight );
     var isLeft = element.scrollLeft === 0;
     var isRight =
-      element.scrollLeft + element.offsetWidth === element.offsetWidth;
+      element.scrollLeft + element.offsetWidth === ( i.settings.scrollContentWidth != null ? i.settings.scrollContentWidth : element.scrollWidth );
 
     var hitsBound;
 
@@ -1087,7 +1078,7 @@ var defaultSettings = function () { return ({
   suppressScrollY: false,
   swipeEasing: true,
   useBothWheelAxes: false,
-  wheelPropagation: false,
+  wheelPropagation: true,
   wheelSpeed: 1,
 }); };
 
@@ -1124,6 +1115,8 @@ var PerfectScrollbar = function PerfectScrollbar(element, userSettings) {
   this.containerHeight = null;
   this.contentWidth = null;
   this.contentHeight = null;
+  this.containerLeft = parseFloat( element.style.left ) || element.getBoundingClientRect().left;
+  this.containerTop = parseFloat( element.style.top ) || element.getBoundingClientRect().top;
 
   var focus = function () { return element.classList.add(cls.state.focus); };
   var blur = function () { return element.classList.remove(cls.state.focus); };
@@ -1144,9 +1137,13 @@ var PerfectScrollbar = function PerfectScrollbar(element, userSettings) {
   this.ownerDocument = element.ownerDocument || document;
 
   this.scrollbarXRail = div(cls.element.rail('x'));
-  element.appendChild(this.scrollbarXRail);
+    
+  //TEST
+  document.body.appendChild(this.scrollbarXRail);
   this.scrollbarX = div(cls.element.thumb('x'));
-  this.scrollbarXRail.appendChild(this.scrollbarX);
+  this.scrollbarXRail.appendChild( this.scrollbarX );
+ 
+ 
   this.scrollbarX.setAttribute('tabindex', 0);
   this.event.bind(this.scrollbarX, 'focus', focus);
   this.event.bind(this.scrollbarX, 'blur', blur);
@@ -1172,9 +1169,20 @@ var PerfectScrollbar = function PerfectScrollbar(element, userSettings) {
   this.railXRatio = null;
 
   this.scrollbarYRail = div(cls.element.rail('y'));
-  element.appendChild(this.scrollbarYRail);
+
+  //TEST
+  this.event.bind( this.element, "mouseenter", function () {
+    this$1.scrollbarXRail.style.backgroundColor = "#eee";
+    this$1.scrollbarYRail.style.backgroundColor = "#eee";
+    this$1.scrollbarXRail.style.opacity = 0.9;
+    this$1.scrollbarYRail.style.opacity = 0.9;
+  });
+
+  // TEST
+  document.body.appendChild(this.scrollbarYRail);
   this.scrollbarY = div(cls.element.thumb('y'));
   this.scrollbarYRail.appendChild(this.scrollbarY);
+    
   this.scrollbarY.setAttribute('tabindex', 0);
   this.event.bind(this.scrollbarY, 'focus', focus);
   this.event.bind(this.scrollbarY, 'blur', blur);
